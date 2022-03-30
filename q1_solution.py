@@ -19,7 +19,8 @@ def log_likelihood_bernoulli(mu, target):
     target = target.view(batch_size, -1)
 
     # log_likelihood_bernoulli
-    return
+
+    return torch.sum(torch.log(mu**target * (1-mu)**(1-target)), 1)
 
 
 def log_likelihood_normal(mu, logvar, z):
@@ -40,7 +41,7 @@ def log_likelihood_normal(mu, logvar, z):
     z = z.view(batch_size, -1)
 
     # log normal
-    return
+    return torch.sum((-1/2)*(math.log(2*math.pi)+logvar) - (z-mu)**2/(2*torch.exp(logvar)), 1)
 
 
 def log_mean_exp(y):
