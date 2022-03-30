@@ -58,7 +58,9 @@ def log_mean_exp(y):
     sample_size = y.size(1)
 
     # log_mean_exp
-    return
+    max_ai = torch.squeeze(torch.max(y, 1).values)
+
+    return torch.log((1/sample_size) * torch.sum(torch.exp(y - max_ai) + max_ai, 1))
 
 
 def kl_gaussian_gaussian_analytic(mu_q, logvar_q, mu_p, logvar_p):
