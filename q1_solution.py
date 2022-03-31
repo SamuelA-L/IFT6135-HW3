@@ -115,7 +115,10 @@ def kl_gaussian_gaussian_mc(mu_q, logvar_q, mu_p, logvar_p, num_samples=1):
     logvar_p = logvar_p.view(batch_size, -1).unsqueeze(1).expand(batch_size, num_samples, input_size)
 
     # kld
-    p = torch.normal(mean=mu_p, std=torch.sqrt(torch.exp(logvar_p)))
-    q = torch.normal(mean=mu_q, std=torch.sqrt(torch.exp(logvar_q)))
+    p = torch.distributions.normal.Normal(loc=mu_p, scale=torch.sqrt(torch.exp(logvar_p)))
+    q = torch.distributions.normal.Normal(loc=mu_q, scale=torch.sqrt(torch.exp(logvar_q)))
 
-    return
+    sample = q.rsample()
+
+    return torch.mean(q.log_prob(sample) - p.log_prob(sample), 1)
+
