@@ -89,7 +89,7 @@ def kl_gaussian_gaussian_analytic(mu_q, logvar_q, mu_p, logvar_p):
     return 1/2 * torch.sum(
         logvar_p - logvar_q - D
         + torch.exp(logvar_q-logvar_p)
-        + (mu_p - mu_q) * (1/torch.exp(logvar_p)) * (mu_p - mu_q)
+        + (mu_p - mu_q)**2 * (1/torch.exp(logvar_p))
         , 1)
 
 
