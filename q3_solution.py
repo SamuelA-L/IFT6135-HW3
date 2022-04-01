@@ -85,6 +85,9 @@ class SimSiam(nn.Module):
         """
         COMPLETE ME. DONT MODIFY THE PARAMETERS OF THE FUNCTION. Otherwise, tests might fail.
         """
+        similarity = CosineSimilarity()
+
+        return -0.5 * (similarity(p1, z2).mean() + similarity(p2, z1).mean())
 
 # you might need this function when implementing CosineSimilarity forward function
 def bdot(a, b):
