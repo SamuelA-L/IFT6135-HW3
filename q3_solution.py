@@ -75,6 +75,16 @@ class SimSiam(nn.Module):
         Note that the outputs are differnt if stop_gradient is True or False
         """
 
+        z1 = self.encoder(x1)
+        z2 = self.encoder(x2)
+        p1 = self.predictor(z1)
+        p2 = self.predictor(z2)
+
+        if self.stop_gradient:
+            return p1, p2, z1.detach(), z2.detach()
+
+        return p1, p2, z1, z2
+
     def loss (self, p1,p2,z1,z2, similarity_function='CosineSimilarity'):
         """ 
         Input:
