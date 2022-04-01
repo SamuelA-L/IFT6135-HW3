@@ -120,5 +120,5 @@ def kl_gaussian_gaussian_mc(mu_q, logvar_q, mu_p, logvar_p, num_samples=1):
 
     sample = q.rsample()
 
-    return torch.mean(q.log_prob(sample) - p.log_prob(sample), 1)
+    return torch.mean(torch.sum(q.log_prob(sample), 2) - torch.sum(p.log_prob(sample), 2), 1)
 
