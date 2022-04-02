@@ -144,6 +144,6 @@ class CosineSimilarity(Module):
         """
         COMPLETE ME. DONT MODIFY THE PARAMETERS OF THE FUNCTION. Otherwise, tests might fail.
         """
-        cos = nn.CosineSimilarity(dim=1, eps=1e-6)
+        cos = nn.CosineSimilarity(dim=self.dim, eps=self.eps)
 
         return cos(x1, x2)
