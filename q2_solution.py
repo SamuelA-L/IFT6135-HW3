@@ -20,7 +20,15 @@ def lp_reg(x, y, critic):
     :param critic: (Module) - torch module that you want to regularize.
     :return: (FloatTensor) - shape: (1,) - Lipschitz penalty
     """
-    pass
+    t = torch.rand(x.size())
+    x_hat = t*x + (1-t)*y
+    x_hat.requires_grad = True
+    f_out = critic(x_hat)
+    grad_f = torch.autograd.grad(f_out, x_hat, grad_outputs=torch.ones(f_out.size()))[0]
+    grad_norm = torch.norm(grad_f, p=2, dim=-1)
+    max_0_grad = torch.relu(grad_norm-1)
+
+    return torch.mean(max_0_grad**2, 0)
 
 
 def vf_wasserstein_distance(p, q, critic):
