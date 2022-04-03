@@ -147,12 +147,13 @@ if __name__ == '__main__':
 
     x_1 = torch.randn(train_batch_size, z_dim).to(device)
     x_2 = torch.randn(train_batch_size, z_dim).to(device)
-    save_image(x_1, f'latent_space_int/img_ref1.png', normalize=True, value_range=(-1, 1))
-    save_image(x_2, f'latent_space_int/img_ref2.png', normalize=True, value_range=(-1, 1))
-    save_image(x_1, f'pixel_space_int/img_ref1.png', normalize=True, value_range=(-1, 1))
-    save_image(x_2, f'pixel_space_int/img_ref2.png', normalize=True, value_range=(-1, 1))
     img_1 = generator(x_1)
     img_2 = generator(x_2)
+    save_image(img_1, f'latent_space_int/img_ref1.png', normalize=True, value_range=(-1, 1))
+    save_image(img_2, f'latent_space_int/img_ref2.png', normalize=True, value_range=(-1, 1))
+    save_image(img_1, f'pixel_space_int/img_ref1.png', normalize=True, value_range=(-1, 1))
+    save_image(img_2, f'pixel_space_int/img_ref2.png', normalize=True, value_range=(-1, 1))
+
     alphas = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
     for a in alphas:
         x_latent = generator(a*x_1 + (1-a)*x_2)
