@@ -30,6 +30,7 @@ from torch import nn
 from torch.nn.modules import upsampling
 from torch.functional import F
 from torch.optim import Adam
+from tqdm import tqdm
 
 """Complete **functions in q1_solution** to answer the questions 1.1~1.5"""
 
@@ -126,7 +127,7 @@ print(vae)
 
 for i in range(20):
     # train
-    for x in train:
+    for x in tqdm(train):
         optimizer.zero_grad()
         z_mean, z_logvar, x_mean = vae(x)
         loss = vae.loss(x, z_mean, z_logvar, x_mean)
@@ -173,7 +174,7 @@ with torch.no_grad():
         # Reshape images and posterior to evaluate probabilities
         x_flat = x[:, None].repeat(1, K, 1, 1, 1).reshape(M*K, -1)
         z_mean_flat = z_mean[:, None, :].expand_as(z_samples).reshape(M*K, -1)
-        z_logvar_flat =  z_logvar[:, None, :].expand_as(z_samples).reshape(M*K, -1)
+        z_logvar_flat = z_logvar[:, None, :].expand_as(z_samples).reshape(M*K, -1)
         ZEROS = torch.zeros(z_mean_flat.size())
 
         # Calculate all the probabilities!
