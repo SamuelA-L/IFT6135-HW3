@@ -72,7 +72,7 @@ num_workers = 2
 save_path = './'
 resume = None #None or a path to a pretrained model (e.g. *.pth.tar')
 start_epoch = 0
-epochs = 102 #Number of epoches (for this question 100 is enough, however for 1000 epoches, you will get closer results to the original paper)
+epochs = 200 #Number of epoches (for this question 100 is enough, however for 1000 epoches, you will get closer results to the original paper)
 
 # data
 dir ='./data'
@@ -405,7 +405,7 @@ val_loader = torch.utils.data.DataLoader(
     num_workers=num_workers, pin_memory=True)
 
 # train for one epoch
-def train(train_loader, model, criterion, optimizer, device):
+def train_2(train_loader, model, criterion, optimizer, device):
 
     """
     Switch to eval mode:
@@ -515,7 +515,7 @@ for epoch in range(start_epoch, epochs):
     adjust_learning_rate(optimizer, init_lr, epoch, epochs)
 
     # train for one epoch
-    acc1 = train(train_loader, model, criterion, optimizer,device)
+    acc1 = train_2(train_loader, model, criterion, optimizer, device)
     print('Train Epoch: [{}/{}] Train acc1:{:.2f}%'.format(epoch, epochs,np.array(acc1).mean() ))
 
 
