@@ -157,8 +157,8 @@ if __name__ == '__main__':
     alphas = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
     for a in alphas:
         x_latent = generator(a*x_1 + (1-a)*x_2)
-        save_image(x_latent, f'latent_space_int/img_{a}.png', normalize=True, value_range=(-1, 1))
+        save_image(x_latent, f'latent_space_int/img_latent_{a}.png', normalize=True, value_range=(-1, 1))
         x_pixel = a*img_1 + (1-a)*img_2
-        save_image(x_pixel, f'pixel_space_int/img_{a}.png', normalize=True, value_range=(-1, 1))
+        save_image(x_pixel, f'pixel_space_int/img_pixel_{a}.png', normalize=True, value_range=(-1, 1))
 
 
