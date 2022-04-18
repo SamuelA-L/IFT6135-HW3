@@ -88,7 +88,7 @@ pred_dim=512
 
 # ablation experiments
 stop_gradient=True # (True or False)
-MLP_mode=None # None|'no_pred_mlp'| 'fixed_random_init'
+MLP_mode='no_pred_mlp' # None|'no_pred_mlp'| 'fixed_random_init'
 
 # optimizer
 lr = 0.03
@@ -155,7 +155,7 @@ Now we can initiate the model.
 
 # Simsiam Model
 print("=> creating model '{}'".format(arch))
-model = SimSiam(models.__dict__[arch], dim, pred_dim, stop_gradient=True, MLP_mode=None)
+model = SimSiam(models.__dict__[arch], dim, pred_dim, stop_gradient=stop_gradient, MLP_mode=MLP_mode)
 # print(model)
 
 model.to(device)
@@ -310,21 +310,24 @@ def adjust_learning_rate(optimizer, init_lr, epoch, epochs):
 **Hint** To run the model without gradient-stopping you need to change `stop_gradient` to `False` and run the notebook. Also, you need to store the training loss and Knn accuracy for each step.
 """
 
-# train loop 
+# train loop
+# test = np.empty(len(train_loader))
+loss_acc_array = np.empty((epochs, 2))
 for epoch in range(start_epoch, epochs):
 
     adjust_learning_rate(optimizer, init_lr, epoch, epochs)
 
     # train for one epoch
     losses = train(train_loader, model, optimizer, device)
-    print('Train Epoch: [{}/{}] Train Loss:{:.5f}'.format(epoch, epochs,np.array(losses).mean() ))
-
+    loss = np.array(losses).mean()
+    print('Train Epoch: [{}/{}] Train Loss:{:.5f}'.format(epoch, epochs, loss))
+    loss_acc_array[epoch, 0] = loss
 
     # test every 10 epochs
     if epoch % 1==0:
         acc1 = test(model.encoder, memory_loader, test_loader, device, knn_k, knn_t)
         print('Test Epoch: [{}/{}] knn_Acc@1: {:.2f}%'.format(epoch, epochs, acc1))
-    
+        loss_acc_array[epoch, 1] = acc1
     # save a checkpoint every 20 epochs
     if epoch % 1 == 0:
         save_checkpoint({
@@ -335,6 +338,8 @@ for epoch in range(start_epoch, epochs):
         }, is_best=False, filename=save_path + '/checkpoint_{:04d}.pth.tar'.format(epoch))
 
 """After the pretraining the network, we can evalute the model in a classification task. In the next cells we will load the backbone model and train an supervised linear classifier on frozen features. """
+
+np.save('gradstop_imap_loss_acc_1.npy', loss_acc_array)
 
 # linear eval
 print("=> creating model '{}'".format(arch))
@@ -403,6 +408,8 @@ val_loader = torch.utils.data.DataLoader(
     val_dataset,
     batch_size=256, shuffle=False,
     num_workers=num_workers, pin_memory=True)
+
+
 
 # train for one epoch
 def train_2(train_loader, model, criterion, optimizer, device):
@@ -508,21 +515,26 @@ def accuracy(output, target, topk=(1,)):
             res.append(correct_k.mul_(100.0 / batch_size))
         return res
 
+
+acc_array_2 = np.empty((epochs,2))
 # train for the classififcation task
 for epoch in range(start_epoch, epochs):
-
 
     adjust_learning_rate(optimizer, init_lr, epoch, epochs)
 
     # train for one epoch
     acc1 = train_2(train_loader, model, criterion, optimizer, device)
-    print('Train Epoch: [{}/{}] Train acc1:{:.2f}%'.format(epoch, epochs,np.array(acc1).mean() ))
-
+    acc = np.array(acc1).mean()
+    print('Train Epoch: [{}/{}] Train acc1:{:.2f}%'.format(epoch, epochs, acc ))
+    acc_array_2[epoch, 0] = acc
 
     # evaluate on validation set
     acc1 = validate(val_loader, model, criterion, device)
-    print('Val Epoch: [{}/{}] Val acc1:{:.2f}%'.format(epoch, epochs,np.array(acc1).mean() ))
+    acc = np.array(acc1).mean()
+    print('Val Epoch: [{}/{}] Val acc1:{:.2f}%'.format(epoch, epochs, acc))
+    acc_array_2[epoch, 1] = acc
 
+np.save('gradstop_imap_acc_array_2.npy', acc_array_2)
 """# Question 3.5
 Investigate the effect of the predictor network by experimenting the below settings. Plot training loss and Knn accuracy against training epochs.
 

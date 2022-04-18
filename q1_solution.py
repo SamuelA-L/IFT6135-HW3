@@ -54,14 +54,24 @@ def log_mean_exp(y):
     :return: (FloatTensor) - shape: (batch_size,) - Output for log_mean_exp.
     """
     # init
+
     batch_size = y.size(0)
     sample_size = y.size(1)
 
     # log_mean_exp
+    y_max = torch.max(y, 1).values.unsqueeze(1)
+    mean_exp = torch.exp(y - y_max).mean(1)
+    log_mean_exp = torch.log(mean_exp).unsqueeze(1) + y_max
+    return log_mean_exp.view(batch_size,)
 
-    max_ai = torch.max(y, 1, keepdim=True).values
-
-    return torch.log(1/sample_size * torch.sum(torch.exp(y - max_ai), 1)) + max_ai
+    # batch_size = y.size(0)
+    # sample_size = y.size(1)
+    #
+    # # log_mean_exp
+    #
+    # max_ai = torch.max(y, 1, keepdim=True).values
+    #
+    # return torch.log(1/sample_size * torch.sum(torch.exp(y - max_ai), 1)) + max_ai
 
 
 def kl_gaussian_gaussian_analytic(mu_q, logvar_q, mu_p, logvar_p):

@@ -38,156 +38,172 @@ from q1_solution import log_likelihood_bernoulli, log_likelihood_normal, log_mea
 
 """Define data loaders"""
 
-def get_data_loader(dataset_location, batch_size):
-    URL = "http://www.cs.toronto.edu/~larocheh/public/datasets/binarized_mnist/"
-    # start processing
-    def lines_to_np_array(lines):
-        return np.array([[int(i) for i in line.split()] for line in lines])
-    splitdata = []
-    for splitname in ["train", "valid", "test"]:
-        filename = "binarized_mnist_%s.amat" % splitname
-        filepath = os.path.join(dataset_location, filename)
-        utils.download_url(URL + filename, dataset_location)
-        with open(filepath) as f:
-            lines = f.readlines()
-        x = lines_to_np_array(lines).astype('float32')
-        x = x.reshape(x.shape[0], 1, 28, 28)
-        # pytorch data loader
-        dataset = data_utils.TensorDataset(torch.from_numpy(x))
-        dataset_loader = data_utils.DataLoader(x, batch_size=batch_size, shuffle=splitname == "train")
-        splitdata.append(dataset_loader)
-    return splitdata
+# def get_data_loader(dataset_location, batch_size):
+#     URL = "http://www.cs.toronto.edu/~larocheh/public/datasets/binarized_mnist/"
+#     # start processing
+#     def lines_to_np_array(lines):
+#         return np.array([[int(i) for i in line.split()] for line in lines])
+#     splitdata = []
+#     for splitname in ["train", "valid", "test"]:
+#         filename = "binarized_mnist_%s.amat" % splitname
+#         filepath = os.path.join(dataset_location, filename)
+#         utils.download_url(URL + filename, dataset_location)
+#         with open(filepath) as f:
+#             lines = f.readlines()
+#         x = lines_to_np_array(lines).astype('float32')
+#         x = x.reshape(x.shape[0], 1, 28, 28)
+#         # pytorch data loader
+#         dataset = data_utils.TensorDataset(torch.from_numpy(x))
+#         dataset_loader = data_utils.DataLoader(x, batch_size=batch_size, shuffle=splitname == "train")
+#         splitdata.append(dataset_loader)
+#     return splitdata
+#
+# train, valid, test = get_data_loader("binarized_mnist", 64)
+#
+# """Define VAE network architecture
+#
+# """
+#
+# class Encoder(nn.Module):
+#     def __init__(self, latent_size):
+#         super(Encoder, self).__init__()
+#         self.mlp = nn.Sequential(
+#             nn.Linear(784, 300),
+#             nn.ELU(),
+#             nn.Linear(300, 300),
+#             nn.ELU(),
+#             nn.Linear(300, 2 * latent_size),
+#         )
+#
+#     def forward(self, x):
+#         batch_size = x.size(0)
+#         z_mean, z_logvar = self.mlp(x.view(batch_size, 784)).chunk(2, dim=-1)
+#         return z_mean, z_logvar
+#
+# class Decoder(nn.Module):
+#     def __init__(self, latent_size):
+#         super(Decoder, self).__init__()
+#         self.mlp = nn.Sequential(
+#             nn.Linear(latent_size, 300),
+#             nn.ELU(),
+#             nn.Linear(300, 300),
+#             nn.ELU(),
+#             nn.Linear(300, 784),
+#         )
+#
+#     def forward(self, z):
+#         return self.mlp(z) - 5.
+#
+# class VAE(nn.Module):
+#     def __init__(self, latent_size):
+#         super(VAE, self).__init__()
+#         self.encode = Encoder(latent_size)
+#         self.decode = Decoder(latent_size)
+#
+#     def forward(self, x):
+#         z_mean, z_logvar = self.encode(x)
+#         z_sample = z_mean + torch.exp(z_logvar / 2.) * torch.randn_like(z_logvar)
+#         x_mean = self.decode(z_sample)
+#         return z_mean, z_logvar, x_mean
+#
+#     def loss(self, x, z_mean, z_logvar, x_mean):
+#         ZERO = torch.zeros(z_mean.size())
+#         kl = kl_gaussian_gaussian_mc(z_mean, z_logvar, ZERO, ZERO, num_samples=1000).mean()
+#         # kl = kl_gaussian_gaussian_analytic(z_mean, z_logvar, ZERO, ZERO).mean()
+#         recon_loss = -log_likelihood_bernoulli(
+#             torch.sigmoid(x_mean.view(x.size(0), -1)),
+#             x.view(x.size(0), -1),
+#         ).mean()
+#         return recon_loss + kl
+#
+# """Initialize a model and optimizer"""
+#
+# vae = VAE(100)
+# params = vae.parameters()
+# optimizer = Adam(params, lr=3e-4)
+# print(vae)
+#
+# """Train the model"""
+# elbo_curve = np.empty((20))
+#
+# for i in range(20):
+#     # train
+#     for x in tqdm(train):
+#         optimizer.zero_grad()
+#         z_mean, z_logvar, x_mean = vae(x)
+#         loss = vae.loss(x, z_mean, z_logvar, x_mean)
+#         loss.backward()
+#         optimizer.step()
+#
+#     # evaluate ELBO on the valid dataset
+#     with torch.no_grad():
+#         total_loss = 0.
+#         total_count = 0
+#         for x in valid:
+#             total_loss += vae.loss(x, *vae(x)) * x.size(0)
+#             total_count += x.size(0)
+#
+#         elbo_loss = (total_loss / total_count).item()
+#         print('-elbo: ', elbo_loss)
+#         elbo_curve[i] = elbo_loss
+# """Save the model"""
+#
+# torch.save(vae, 'model.pt')
+#
+# """Load the model"""
+#
+# vae = torch.load('model.pt')
+#
+# """Evaluate the $\log p_\theta(x)$ of the model on test by using importance sampling"""
+#
+# total_loss = 0.
+# total_count = 0
+# with torch.no_grad():
+#     #x = next(iter(test))
+#     for x in test:
+#         # init
+#         K = 200
+#         M = x.size(0)
+#
+#         # Sample from the posterior
+#         z_mean, z_logvar = vae.encode(x)
+#         eps = torch.randn(z_mean.size(0), K, z_mean.size(1))
+#         z_samples = z_mean[:, None, :] + torch.exp(z_logvar / 2.)[:, None, :] * eps # Broadcast the noise over the mean and variance
+#
+#         # Decode samples
+#         z_samples_flat = z_samples.view(-1, z_samples.size(-1)) # Flatten out the z samples
+#         x_mean_flat = vae.decode(z_samples_flat) # Push it through
+#
+#         # Reshape images and posterior to evaluate probabilities
+#         x_flat = x[:, None].repeat(1, K, 1, 1, 1).reshape(M*K, -1)
+#         z_mean_flat = z_mean[:, None, :].expand_as(z_samples).reshape(M*K, -1)
+#         z_logvar_flat = z_logvar[:, None, :].expand_as(z_samples).reshape(M*K, -1)
+#         ZEROS = torch.zeros(z_mean_flat.size())
+#
+#         # Calculate all the probabilities!
+#         log_p_x_z = log_likelihood_bernoulli(torch.sigmoid(x_mean_flat), x_flat).view(M, K)
+#         log_q_z_x = log_likelihood_normal(z_mean_flat, z_logvar_flat, z_samples_flat).view(M, K)
+#         log_p_z = log_likelihood_normal(ZEROS, ZEROS, z_samples_flat).view(M, K)
+#
+#         # Recombine them.
+#         w = log_p_x_z + log_p_z - log_q_z_x
+#         log_p = log_mean_exp(w)
+#
+#         # Accumulate
+#         total_loss += log_p.sum()
+#         total_count += M
+#
+# print('log p(x):', (total_loss / total_count).item())
+#
+#
+# np.save('elbo_MC.npy', elbo_curve)
+elbo_curve = np.load('elbo.npy')
+elbo_curve_MC = np.load('elbo_MC.npy')
+import matplotlib.pyplot as plt
 
-train, valid, test = get_data_loader("binarized_mnist", 64)
-
-"""Define VAE network architecture
-
-"""
-
-class Encoder(nn.Module):
-    def __init__(self, latent_size):
-        super(Encoder, self).__init__()
-        self.mlp = nn.Sequential(
-            nn.Linear(784, 300),
-            nn.ELU(),
-            nn.Linear(300, 300),
-            nn.ELU(),
-            nn.Linear(300, 2 * latent_size),
-        )
-
-    def forward(self, x):
-        batch_size = x.size(0)
-        z_mean, z_logvar = self.mlp(x.view(batch_size, 784)).chunk(2, dim=-1)
-        return z_mean, z_logvar
-
-class Decoder(nn.Module):
-    def __init__(self, latent_size):
-        super(Decoder, self).__init__()
-        self.mlp = nn.Sequential(
-            nn.Linear(latent_size, 300),
-            nn.ELU(),
-            nn.Linear(300, 300),
-            nn.ELU(),
-            nn.Linear(300, 784),
-        )
-        
-    def forward(self, z):
-        return self.mlp(z) - 5.
-
-class VAE(nn.Module):
-    def __init__(self, latent_size):
-        super(VAE, self).__init__()
-        self.encode = Encoder(latent_size)
-        self.decode = Decoder(latent_size)
-
-    def forward(self, x):
-        z_mean, z_logvar = self.encode(x)
-        z_sample = z_mean + torch.exp(z_logvar / 2.) * torch.randn_like(z_logvar)
-        x_mean = self.decode(z_sample)
-        return z_mean, z_logvar, x_mean
-
-    def loss(self, x, z_mean, z_logvar, x_mean):
-        ZERO = torch.zeros(z_mean.size())
-        #kl = kl_gaussian_gaussian_mc(z_mean, z_logvar, ZERO, ZERO, num_samples=1000).mean()
-        kl = kl_gaussian_gaussian_analytic(z_mean, z_logvar, ZERO, ZERO).mean()
-        recon_loss = -log_likelihood_bernoulli(
-            torch.sigmoid(x_mean.view(x.size(0), -1)),
-            x.view(x.size(0), -1),            
-        ).mean()
-        return recon_loss + kl
-
-"""Initialize a model and optimizer"""
-
-vae = VAE(100)
-params = vae.parameters()
-optimizer = Adam(params, lr=3e-4)
-print(vae)
-
-"""Train the model"""
-
-for i in range(20):
-    # train
-    for x in tqdm(train):
-        optimizer.zero_grad()
-        z_mean, z_logvar, x_mean = vae(x)
-        loss = vae.loss(x, z_mean, z_logvar, x_mean)
-        loss.backward()
-        optimizer.step()
-
-    # evaluate ELBO on the valid dataset
-    with torch.no_grad():
-        total_loss = 0.
-        total_count = 0
-        for x in valid:
-            total_loss += vae.loss(x, *vae(x)) * x.size(0)
-            total_count += x.size(0)
-        print('-elbo: ', (total_loss / total_count).item())
-
-"""Save the model"""
-
-torch.save(vae, 'model.pt')
-
-"""Load the model"""
-
-vae = torch.load('model.pt')
-
-"""Evaluate the $\log p_\theta(x)$ of the model on test by using importance sampling"""
-
-total_loss = 0.
-total_count = 0
-with torch.no_grad():
-    #x = next(iter(test))
-    for x in test:
-        # init
-        K = 200
-        M = x.size(0)
-
-        # Sample from the posterior
-        z_mean, z_logvar = vae.encode(x)
-        eps = torch.randn(z_mean.size(0), K, z_mean.size(1))
-        z_samples = z_mean[:, None, :] + torch.exp(z_logvar / 2.)[:, None, :] * eps # Broadcast the noise over the mean and variance
-
-        # Decode samples
-        z_samples_flat = z_samples.view(-1, z_samples.size(-1)) # Flatten out the z samples
-        x_mean_flat = vae.decode(z_samples_flat) # Push it through
-
-        # Reshape images and posterior to evaluate probabilities
-        x_flat = x[:, None].repeat(1, K, 1, 1, 1).reshape(M*K, -1)
-        z_mean_flat = z_mean[:, None, :].expand_as(z_samples).reshape(M*K, -1)
-        z_logvar_flat = z_logvar[:, None, :].expand_as(z_samples).reshape(M*K, -1)
-        ZEROS = torch.zeros(z_mean_flat.size())
-
-        # Calculate all the probabilities!
-        log_p_x_z = log_likelihood_bernoulli(torch.sigmoid(x_mean_flat), x_flat).view(M, K)
-        log_q_z_x = log_likelihood_normal(z_mean_flat, z_logvar_flat, z_samples_flat).view(M, K)
-        log_p_z = log_likelihood_normal(ZEROS, ZEROS, z_samples_flat).view(M, K)
-
-        # Recombine them.
-        w = log_p_x_z + log_p_z - log_q_z_x
-        log_p = log_mean_exp(w)
-
-        # Accumulate
-        total_loss += log_p.sum()
-        total_count += M
-      
-print('log p(x):', (total_loss / total_count).item())
+# plt.plot(elbo_curve)
+plt.plot(elbo_curve)
+plt.legend
+plt.xlabel('epoch')
+plt.ylabel('ELBO')
+plt.savefig('/home/samuel/Desktop/figures_hw3/' + 'elbo' + '.png')
